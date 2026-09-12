@@ -1,70 +1,166 @@
-import { useState } from 'react'
-import TaskList from './TaskList'
+```jsx
+import { useState, useEffect } from "react";
+import TaskList from "./TaskList";
 
 function App() {
-  const [task, setTask] = useState('')
-  const [tasks, setTasks] = useState([])
+  const [taskText, setTaskText] = useState("");
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [tasks, setTasks] = useState([]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const addTask = () => {
-    if (task.trim() === '') return
+    if (taskText.trim() === "") return;
 
-    setTasks([
-      ...tasks,
-      {
-        text: task,
-        completed: false,
-      },
-    ])
+    const now = new Date();
 
-    setTask('')
-  }
+    const newTask = {
+      id: Date.now(),
+      text: taskText,
+      completed: false,
+      date: now.toLocaleDateString("en-GB"),
+      time: now.toLocaleTimeString("en-GB"),
+    };
 
-  const completeTask = (index) => {
-    const updatedTasks = [...tasks]
-    updatedTasks[index].completed =
-      !updatedTasks[index].completed
+    setTasks([...tasks, newTask]);
+    setTaskText("");
+  };
 
-    setTasks(updatedTasks)
-  }
+  const toggleTask = (index) => {
+    setTasks(
+      tasks.map((task, i) =>
+        i === index
+          ? { ...task, completed: !task.completed }
+          : task
+      )
+    );
+  };
 
   const deleteTask = (index) => {
-    setTasks(tasks.filter((_, i) => i !== index))
-  }
+    setTasks(tasks.filter((_, i) => i !== index));
+  };
+
+  const completedCount = tasks.filter(
+    (task) => task.completed
+  ).length;
+
+  const pendingCount = tasks.filter(
+    (task) => !task.completed
+  ).length;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="mx-auto max-w-xl rounded-xl bg-white p-6 shadow-lg">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 px-4 py-10">
 
-        <h1 className="mb-6 text-3xl font-bold text-gray-800">
-          My Task Tracker
-        </h1>
+      <div className="mx-auto w-full max-w-2xl">
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Enter a task"
-            value={task}
-            onChange={(e) => setTask(e.target.value)}
-            className="flex-1 rounded border p-2"
-          />
+        <div className="mb-6 text-center">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-indigo-300">
+            Productivity
+          </p>
 
-          <button
-            onClick={addTask}
-            className="rounded bg-blue-600 px-4 py-2 text-white"
-          >
-            Add Task
-          </button>
+          <h1 className="text-4xl font-extrabold text-white">
+            My Task Tracker
+          </h1>
+
+          <p className="mt-2 text-slate-400">
+            Organize your tasks and stay productive.
+          </p>
         </div>
 
-        <TaskList
-          tasks={tasks}
-          onComplete={completeTask}
-          onDelete={deleteTask}
-        />
+        <div className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
+
+          <div className="mb-6 rounded-2xl border border-indigo-400/20 bg-indigo-500/10 p-4 text-center">
+            <p className="text-lg font-semibold text-indigo-200">
+              📅 {currentDateTime.toLocaleDateString("en-GB")}
+            </p>
+
+            <p className="mt-1 text-xl font-bold text-white">
+              🕒 {currentDateTime.toLocaleTimeString("en-GB")}
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="What do you need to do?"
+              value={taskText}
+              onChange={(e) => setTaskText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  addTask();
+                }
+              }}
+              className="min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30"
+            />
+
+            <button
+              onClick={addTask}
+              className="rounded-xl bg-indigo-500 px-5 py-3 font-semibold text-white transition hover:bg-indigo-400 active:scale-95"
+            >
+              Add
+            </button>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-3">
+
+            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4">
+              <p className="text-sm text-emerald-300">
+                Completed
+              </p>
+
+              <p className="mt-1 text-2xl font-bold text-white">
+                {completedCount}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4">
+              <p className="text-sm text-amber-300">
+                Pending
+              </p>
+
+              <p className="mt-1 text-2xl font-bold text-white">
+                {pendingCount}
+              </p>
+            </div>
+
+          </div>
+
+          <TaskList
+            tasks={tasks}
+            onComplete={toggleTask}
+            onDelete={deleteTask}
+          />
+
+          {tasks.length === 0 && (
+            <div className="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center">
+              <p className="text-3xl">📝</p>
+
+              <p className="mt-2 font-semibold text-slate-300">
+                No tasks yet
+              </p>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Add your first task above.
+              </p>
+            </div>
+          )}
+
+        </div>
+
+        <p className="mt-5 text-center text-sm text-slate-500">
+          Stay focused • Complete your goals 🚀
+        </p>
 
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
+```
